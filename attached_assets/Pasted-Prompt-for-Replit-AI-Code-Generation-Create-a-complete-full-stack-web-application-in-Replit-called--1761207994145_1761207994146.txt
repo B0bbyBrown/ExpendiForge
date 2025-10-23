@@ -1,0 +1,129 @@
+Prompt for Replit AI Code Generation:
+Create a complete full-stack web application in Replit called "ExpendiForge" – a company shopping tracker MVP. Use Python/Flask for the backend, SQLite as the database (via SQLAlchemy), HTML/Jinja templates for the frontend with Bootstrap for responsive design, and Chart.js for visualizations. Include Flask-Login for authentication. The app should allow shoppers to upload purchase details (focusing on products/services paid on collection) and admins to view a dashboard for analysis. Follow this exact structure and requirements:
+Project Summary:
+
+Tagline: "Forge Financial Clarity from Every Purchase."
+Goal: Track company expenditures simply without full ERP overhead.
+Target: Shoppers (upload) and Admins/Finance (view/analyze).
+MVP Scope: User auth, purchase uploads, data storage, dashboard analytics.
+Assumptions: Payments on collection (no bank integration); web-only with responsive design; basic security (hash passwords, input sanitization); <100 users.
+Risks: Ensure data privacy (encrypt attachments if possible); modular code for future PostgreSQL migration.
+
+Tech Stack:
+
+Backend: Flask, SQLAlchemy, Flask-Login, Flask-Migrate for schema migrations.
+DB: SQLite for MVP.
+Frontend: HTML/Jinja, Bootstrap CSS/JS, Chart.js for charts.
+Other: Use Werkzeug for secure file uploads; CSV exports via csv module.
+
+Database Schema (Implement exactly as models):
+Use SQLAlchemy to define these models. Include relationships and constraints.
+
+Users:
+
+id: Integer PK autoincrement
+username: String unique not null
+email: String unique not null
+password: String not null (hashed with Werkzeug)
+role: String not null default 'shopper' (options: 'shopper', 'admin')
+created_at: DateTime default now
+
+
+Categories:
+
+id: Integer PK autoincrement
+name: String unique not null (e.g., 'Office Supplies')
+description: String
+
+
+Purchases (core table):
+
+id: Integer PK autoincrement
+user_id: Integer FK to Users not null
+description: String not null
+amount: Float not null (check >0)
+quantity: Integer default 1 (check >0)
+vendor: String not null
+date_collected: Date not null default today
+purchase_type: String not null default 'product' (options: 'product', 'service')
+category_id: Integer FK to Categories
+attachment_url: String (path to uploaded file)
+notes: String
+paid_on_collection: Integer default 1 (1=true, 0=false)
+created_at: DateTime default now
+Relationships: backref to User and Category
+
+
+Audit Logs:
+
+id: Integer PK autoincrement
+purchase_id: Integer FK to Purchases
+user_id: Integer FK to Users
+action: String not null (e.g., 'create', 'update')
+changes: String (JSON string of changes)
+timestamp: DateTime default now
+Relationships: backref to Purchase and User
+
+
+
+Seed initial categories on app init: ['Office Supplies', 'Electronics', 'Services', 'Miscellaneous'] with empty descriptions.
+Functional Requirements:
+
+User Management:
+
+Registration: Form with username, email, password, role (select shopper/admin). Hash passwords. Redirect to login.
+Login/Logout: Session-based with Flask-Login. Protect routes by role.
+Role Access: Shoppers can only upload; Admins can view dashboard. Redirect unauthorized.
+
+
+Purchase Upload:
+
+Form (for shoppers): Fields for description (text), amount (float >0), quantity (int >=1), vendor (text), date_collected (date), purchase_type (select: product/service), category (select from DB), notes (textarea), attachment (file upload), paid_on_collection (checkbox, default checked).
+Validation: Server-side checks (required fields, positive values, file types: PDF/JPG/PNG <5MB).
+Handle submission: Save to DB, upload file to static/uploads folder, store relative URL. Log to Audit Logs (action='create', changes=JSON of new data).
+Success: Flash message, redirect to dashboard or uploads list.
+
+
+Dashboard & Analytics (for admins):
+
+Interactive table: List all purchases, filterable by date range, category, vendor, type. Use DataTables.js if easy, else simple Flask queries.
+Aggregates: Total spend, breakdowns by type/vendor/category (e.g., sum(amount*quantity)).
+Charts: Pie chart for category distribution, bar for monthly spends (using Chart.js).
+Search: Free-text search on description/vendor.
+Export: CSV download of filtered data.
+Alerts: UI flags for high spends (>1000) or anomalies (e.g., red highlight).
+
+
+
+Non-Functional:
+
+Performance: Optimize queries for dashboard.
+Security: Hash passwords; sanitize inputs (prevent SQL injection/XSS); secure file uploads.
+Usability: Responsive Bootstrap layout; intuitive forms.
+Reliability: Error handling (e.g., flash errors on failed uploads); basic logging.
+Scalability: Modular code.
+
+Routes & Structure:
+
+/: Home (login redirect if not auth).
+/register: GET/POST registration form.
+/login: GET/POST login form.
+/logout: Logout.
+/upload: GET/POST purchase upload form (shopper only).
+/dashboard: GET dashboard view (admin only, with filters/charts/export).
+Static files: Serve uploads from /static/uploads.
+
+Development Phases (Implement in order):
+
+Setup: Init Flask app, config SQLAlchemy (URI='sqlite:///expendiforge.db'), Flask-Login, migrations. Create app.py, models.py, routes.py.
+Backend: Models as above, migrations, seed categories in init.
+Upload: Form template, handle POST, file upload, audit log.
+Dashboard: Template with table/charts, query logic, export route.
+Testing: Add basic unit tests (e.g., pytest for models/routes). Manual E2E: register, login, upload, view dashboard.
+Polish: Responsive tweaks, input sanitization, error pages.
+
+Post-MVP (Optional stubs):
+
+Comment placeholders for PWA wrapper, OCR for receipts, email notifications.
+
+Generate the full code structure with all files (app.py, models.py, forms.py if using WTForms, templates/*.html, static/js/chart.js integration). Run migrations on start. Make it runnable in Replit with a main.py entrypoint. Ensure it's secure, clean, and follows best practices. Last updated: October 23, 2025.

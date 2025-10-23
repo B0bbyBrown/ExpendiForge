@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ExpendiForge{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-left: 4px solid #0d6efd;
+    }
+    .high-spend {
+        background-color: #fff3cd;
+        border-left: 4px solid #ff6b6b;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">
+    <i class="bi bi-graph-up"></i> Admin Dashboard
+</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total Spend</h6>
+                <h3 class="card-title text-primary mb-0">${{ "%.2f"|format(total_spend) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total Purchases</h6>
+                <h3 class="card-title text-primary mb-0">{{ purchases|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Products</h6>
+                <h3 class="card-title text-primary mb-0">
+                    {% set product_total = type_totals|selectattr('0', 'equalto', 'product')|map(attribute='1')|first or 0 %}
+                    ${{ "%.2f"|format(product_total) }}
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Services</h6>
+                <h3 class="card-title text-primary mb-0">
+                    {% set service_total = type_totals|selectattr('0', 'equalto', 'service')|map(attribute='1')|first or 0 %}
+                    ${{ "%.2f"|format(service_total) }}
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Spending by Category</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Monthly Spending Trend</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Purchases</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('dashboard') }}" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ filters.search }}" placeholder="Description or vendor...">
+            </div>
+            <div class="col-md-2">
+                <label for="category" class="form-label">Category</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">All</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if filters.category == category.id|string %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="vendor" class="form-label">Vendor</label>
+                <select class="form-select" id="vendor" name="vendor">
+                    <option value="">All</option>
+                    {% for vendor in vendors %}
+                    <option value="{{ vendor }}" {% if filters.vendor == vendor %}selected{% endif %}>
+                        {{ vendor }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="type" class="form-label">Type</label>
+                <select class="form-select" id="type" name="type">
+                    <option value="">All</option>
+                    <option value="product" {% if filters.type == 'product' %}selected{% endif %}>Product</option>
+                    <option value="service" {% if filters.type == 'service' %}selected{% endif %}>Service</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ filters.date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ filters.date_to }}">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Apply Filters
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+                <a href="{{ url_for('export', **filters) }}" class="btn btn-success">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-table"></i> All Purchases</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Vendor</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                        <th>Total</th>
+                        <th>By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for purchase in purchases %}
+                    {% set total = purchase.amount * purchase.quantity %}
+                    <tr {% if total > 1000 %}class="high-spend"{% endif %}>
+                        <td>{{ purchase.date_collected }}</td>
+                        <td>
+                            {{ purchase.description }}
+                            {% if purchase.attachment_url %}
+                            <a href="{{ url_for('static', filename=purchase.attachment_url) }}" target="_blank" class="ms-1">
+                                <i class="bi bi-paperclip"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>{{ purchase.vendor }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'primary' if purchase.purchase_type == 'product' else 'info' }}">
+                                {{ purchase.purchase_type }}
+                            </span>
+                        </td>
+                        <td>{{ purchase.category.name if purchase.category else 'N/A' }}</td>
+                        <td>{{ purchase.quantity }}</td>
+                        <td>${{ "%.2f"|format(purchase.amount) }}</td>
+                        <td>
+                            <strong>${{ "%.2f"|format(total) }}</strong>
+                            {% if total > 1000 %}
+                            <i class="bi bi-exclamation-triangle-fill text-warning" title="High spend alert"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ purchase.user.username }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">No purchases found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const categoryLabels = {{ category_totals|map(attribute='0')|list|tojson }};
+    const categoryData = {{ category_totals|map(attribute='1')|list|tojson }};
+    
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryData,
+                backgroundColor: [
+                    '#0d6efd',
+                    '#6c757d',
+                    '#198754',
+                    '#ffc107',
+                    '#dc3545',
+                    '#0dcaf0'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    const monthlyLabels = [
+        {% for year, month, total in monthly_totals %}
+        '{{ "%04d-%02d"|format(year, month) }}',
+        {% endfor %}
+    ];
+    const monthlyData = {{ monthly_totals|map(attribute='2')|list|tojson }};
+    
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Monthly Spending',
+                data: monthlyData,
+                backgroundColor: '#0d6efd',
+                borderColor: '#0a58ca',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

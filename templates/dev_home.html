@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Dev Home - ExpendiForge{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="text-center mb-5">
+            <h1 class="display-4">
+                <i class="bi bi-code-slash"></i> Developer Testing Environment
+            </h1>
+            <p class="lead text-muted">Access both Shopper and Admin interfaces for comprehensive testing</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card shadow-lg h-100">
+                    <div class="card-body p-5 text-center">
+                        <div class="mb-4">
+                            <i class="bi bi-upload display-1 text-primary"></i>
+                        </div>
+                        <h2 class="card-title mb-3">Shopper Interface</h2>
+                        <p class="card-text text-muted mb-4">
+                            Upload and manage purchase records with file attachments. Test the shopper workflow including form validation and file uploads.
+                        </p>
+                        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-upload"></i> Go to Upload Page
+                        </a>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <small class="text-muted">
+                            <strong>Features:</strong> Purchase upload, file attachments, form validation
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-lg h-100">
+                    <div class="card-body p-5 text-center">
+                        <div class="mb-4">
+                            <i class="bi bi-graph-up display-1 text-success"></i>
+                        </div>
+                        <h2 class="card-title mb-3">Admin Interface</h2>
+                        <p class="card-text text-muted mb-4">
+                            View analytics dashboard with charts, filtering, and data export. Test the admin workflow including search and CSV export.
+                        </p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg">
+                            <i class="bi bi-graph-up"></i> Go to Dashboard
+                        </a>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <small class="text-muted">
+                            <strong>Features:</strong> Analytics, charts, filtering, CSV export
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-5 bg-info bg-opacity-10 border-info">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle"></i> Developer Notes
+                </h5>
+                <ul class="mb-0">
+                    <li><strong>Dev Role:</strong> You have access to both Shopper and Admin interfaces</li>
+                    <li><strong>Test Accounts:</strong> Use <code>shopper/shopper123</code> or <code>admin/admin123</code> for role-specific testing</li>
+                    <li><strong>Quick Testing:</strong> Upload purchases as a shopper, then view them in the admin dashboard</li>
+                    <li><strong>Data Persistence:</strong> All uploads are saved to the database and viewable across sessions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
